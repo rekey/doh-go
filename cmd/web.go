@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -49,15 +50,16 @@ func main() {
 		arr := dns.SplitDomainName(domain)
 		host := service.Store.GetDNS(strings.Join(arr, "."))
 		url := "https://" + host + c.Request().URL.String()
-		logger.Printf("%s: %s %s %s",
-			time.Now().Format("2006-01-02 15:04:05"),
-			"Query",
-			domain,
-			host,
-		)
+		now := time.Now().UnixNano()
 		resp, _ := grequests.Get(url, &grequests.RequestOptions{})
 		defer func() {
 			_ = resp.Close()
+			logger.Printf("%s: %s %s %s",
+				time.Now().Format("2006-01-02 15:04:05"),
+				domain,
+				host,
+				strconv.FormatInt((time.Now().UnixNano()-now)/1e6, 10)+"ms",
+			)
 		}()
 		w := c.ResponseWriter()
 		_, _ = w.Write(resp.Bytes())
