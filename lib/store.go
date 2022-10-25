@@ -42,18 +42,46 @@ func (that *Store) getDomains(cate string) map[string]int {
 }
 
 func (that *Store) AddDomain(key string, cate string) {
+	key = strings.TrimSpace(key)
+	if key == "" {
+		return
+	}
 	domains := that.getDomains(cate)
+	slice := strings.Split(key, ".")
+	if len(slice) == 2 {
+		domains[key] = 1
+		return
+	}
 	_, domain, _ := gotld.GetTld(key)
+	if domain == "" {
+		domains[key] = 1
+		return
+	}
 	domains[domain] = 1
+}
+
+func (that *Store) GetDNSList(key string) []string {
+	_, key, _ = gotld.GetTld(key)
+	slice := strings.Split(key, ".")
+	if slice[len(slice)-1] == "cn" {
+		return that.data.DNS.China
+	}
+	if key == "cn" {
+		return that.data.DNS.China
+	}
+	if key == "top" {
+		return that.data.DNS.Global
+	}
+	domains := that.data.Domains.China
+	if domains[key] != 1 {
+		return that.data.DNS.Global
+	}
+	return that.data.DNS.China
 }
 
 func (that *Store) GetDNS(key string) string {
 	_, key, _ = gotld.GetTld(key)
-	domains := that.data.Domains.China
-	list := that.data.DNS.China
-	if domains[key] != 1 {
-		list = that.data.DNS.Global
-	}
+	list := that.GetDNSList(key)
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	random := r.Intn(len(list))
 	return list[random]
@@ -70,8 +98,12 @@ func (that *Store) Update() {
 		str := resp.String()
 		lines := strings.Split(str, "\n")
 		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
 			slice := strings.Split(line, "/")
-			if len(slice) < 2 || slice[1] == "" {
+			if len(slice) < 3 {
 				continue
 			}
 			that.AddDomain(slice[1], item.Name)

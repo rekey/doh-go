@@ -35,6 +35,13 @@ func createApp() *flamego.Flame {
 }
 
 func main() {
+	go func() {
+		service.Store.Update()
+		for {
+			time.Sleep(time.Hour * 12)
+			service.Store.Update()
+		}
+	}()
 	app := createApp()
 	app.Get("/dns-query", func(c flamego.Context, logger *log.Logger) {
 		dnsQuery := c.Query("dns", "")
