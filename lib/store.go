@@ -72,11 +72,16 @@ func (that *Store) GetDNSList(key string) []string {
 	if key == "top" {
 		return that.data.DNS.Global
 	}
-	domains := that.data.Domains.China
-	if domains[key] != 1 {
+	// 优先检测gfw，后续如果gfw和china表冲突，优先匹配gfw
+	domains := that.data.Domains.GFW
+	if domains[key] == 1 {
 		return that.data.DNS.Global
 	}
-	return that.data.DNS.China
+	domains = that.data.Domains.China
+	if domains[key] == 1 {
+		return that.data.DNS.China
+	}
+	return that.data.DNS.Global
 }
 
 func (that *Store) GetDNS(key string) string {
