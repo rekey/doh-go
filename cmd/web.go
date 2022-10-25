@@ -56,6 +56,9 @@ func main() {
 			host,
 		)
 		resp, _ := grequests.Get(url, &grequests.RequestOptions{})
+		defer func() {
+			_ = resp.Close()
+		}()
 		w := c.ResponseWriter()
 		_, _ = w.Write(resp.Bytes())
 	})
