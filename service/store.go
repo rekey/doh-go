@@ -18,7 +18,7 @@ func init() {
 	_, err := os.Stat(file)
 	if err != nil && os.IsNotExist(err) {
 		resp, _ := grequests.Get(
-			"https://cdn.jsdelivr.net/gh/rekey/doh-go/store/data.json",
+			"https://cdn.jsdelivr.net/gh/rekey/doh-go@main/store/data.json",
 			&grequests.RequestOptions{},
 		)
 		err = os.WriteFile(file, resp.Bytes(), os.ModePerm)
