@@ -2,7 +2,6 @@ package service
 
 import (
 	"doh-go/lib"
-	"github.com/levigross/grequests"
 	"log"
 	"os"
 	"path"
@@ -17,10 +16,7 @@ func init() {
 	file := path.Join(storeDir, "data.json")
 	_, err := os.Stat(file)
 	if err != nil && os.IsNotExist(err) {
-		resp, _ := grequests.Get(
-			"https://cdn.jsdelivr.net/gh/rekey/doh-go@main/store/data.json",
-			&grequests.RequestOptions{},
-		)
+		resp, _ := lib.Request("https://cdn.jsdelivr.net/gh/rekey/doh-go@main/store/data.json")
 		err = os.WriteFile(file, resp.Bytes(), os.ModePerm)
 		log.Println(err)
 	}

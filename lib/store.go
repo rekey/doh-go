@@ -99,7 +99,7 @@ func (that *Store) Save() {
 
 func (that *Store) Update() {
 	for _, item := range that.data.Update {
-		resp, _ := grequests.Get(item.Url, &grequests.RequestOptions{})
+		resp, _ := Request(item.Url)
 		str := resp.String()
 		lines := strings.Split(str, "\n")
 		for _, line := range lines {
