@@ -3,7 +3,6 @@ package lib
 import (
 	"encoding/json"
 	"github.com/forease/gotld"
-	"github.com/levigross/grequests"
 	"math/rand"
 	"os"
 	"strings"
