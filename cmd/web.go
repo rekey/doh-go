@@ -1,7 +1,7 @@
 package main
 
 import (
-	"doh-go/service"
+	"doh-go/lib"
 	"encoding/base64"
 	"github.com/flamego/flamego"
 	"github.com/levigross/grequests"
@@ -13,6 +13,12 @@ import (
 	"strings"
 	"time"
 )
+
+var cwd, _ = os.Getwd()
+var storeDir = path.Join(cwd, "store")
+var store = lib.Store{
+	Dir: storeDir,
+}
 
 func parseDomain(dnsQuery string) string {
 	msg := dns.Msg{}
@@ -36,11 +42,12 @@ func createApp() *flamego.Flame {
 }
 
 func main() {
+	store.Init()
 	go func() {
-		service.Store.Update()
+		store.Update()
 		for {
 			time.Sleep(time.Hour * 12)
-			service.Store.Update()
+			store.Update()
 		}
 	}()
 	app := createApp()
@@ -48,7 +55,7 @@ func main() {
 		dnsQuery := c.Query("dns", "")
 		domain := parseDomain(dnsQuery)
 		arr := dns.SplitDomainName(domain)
-		host := service.Store.GetDNS(strings.Join(arr, "."))
+		host := store.GetDNS(strings.Join(arr, "."))
 		url := "https://" + host + c.Request().URL.String()
 		now := time.Now().UnixNano()
 		resp, _ := grequests.Get(url, &grequests.RequestOptions{})

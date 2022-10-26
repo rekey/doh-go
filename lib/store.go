@@ -3,8 +3,10 @@ package lib
 import (
 	"encoding/json"
 	"github.com/forease/gotld"
+	"log"
 	"math/rand"
 	"os"
+	"path"
 	"strings"
 	"time"
 )
@@ -28,8 +30,9 @@ type data struct {
 }
 
 type Store struct {
-	data data
-	file string
+	data   data
+	Dir    string
+	logger *log.Logger
 }
 
 func (that *Store) getDomains(cate string) map[string]int {
@@ -91,21 +94,25 @@ func (that *Store) GetDNS(key string) string {
 	return list[random]
 }
 
+func (that *Store) SaveDomains() {
+	file := path.Join(that.Dir, "domains.json")
+	buf, _ := json.Marshal(that.data.Domains)
+	_ = os.WriteFile(file, buf, os.ModePerm)
+}
+
 func (that *Store) Save() {
-	buf, _ := json.Marshal(that.data)
-	_ = os.WriteFile(that.file, buf, os.ModePerm)
+	that.SaveDomains()
 }
 
 func (that *Store) Update() {
+	that.log("update", "start")
 	for _, item := range that.data.Update {
-		resp, _ := Request(item.Url)
+		resp, err := Request(item.Url)
+		that.log(item.Name, item.Url, "done", "err:", err)
 		str := resp.String()
 		lines := strings.Split(str, "\n")
 		for _, line := range lines {
 			line = strings.TrimSpace(line)
-			if line == "" {
-				continue
-			}
 			slice := strings.Split(line, "/")
 			if len(slice) < 3 {
 				continue
@@ -114,20 +121,61 @@ func (that *Store) Update() {
 		}
 	}
 	that.Save()
+	that.log("update", "done")
 }
 
-func (that *Store) Init(file string) {
-	that.file = file
-	buf, _ := os.ReadFile(that.file)
-	err := json.Unmarshal(buf, &that.data)
-	if err != nil {
-		that.data = data{
-			DNS: domianDNS{},
-			Domains: domianData{
-				China: map[string]int{},
-				GFW:   map[string]int{},
-			},
-			Update: []domainUpdate{},
-		}
+func (that *Store) initDNS() {
+	file := path.Join(that.Dir, "dns.json")
+	_, err := os.Stat(file)
+	if err != nil && os.IsNotExist(err) {
+		resp, _ := Request("https://cdn.jsdelivr.net/gh/rekey/doh-go@main/store/dns.json")
+		err = os.WriteFile(file, resp.Bytes(), os.ModePerm)
 	}
+	buf, _ := os.ReadFile(file)
+	_ = json.Unmarshal(buf, &that.data.DNS)
+}
+
+func (that *Store) initUpdate() {
+	file := path.Join(that.Dir, "update.json")
+	_, err := os.Stat(file)
+	if err != nil && os.IsNotExist(err) {
+		resp, _ := Request("https://cdn.jsdelivr.net/gh/rekey/doh-go@main/store/update.json")
+		err = os.WriteFile(file, resp.Bytes(), os.ModePerm)
+	}
+	buf, _ := os.ReadFile(file)
+	_ = json.Unmarshal(buf, &that.data.Update)
+}
+
+func (that *Store) initDomains() {
+	file := path.Join(that.Dir, "domains.json")
+	_, err := os.Stat(file)
+	if err != nil && os.IsNotExist(err) {
+		resp, _ := Request("https://cdn.jsdelivr.net/gh/rekey/doh-go@main/store/domains.json")
+		err = os.WriteFile(file, resp.Bytes(), os.ModePerm)
+	}
+	buf, _ := os.ReadFile(file)
+	_ = json.Unmarshal(buf, &that.data.Domains)
+}
+
+func (that *Store) log(v ...any) {
+	v = append([]any{time.Now().Format("2006-01-02 15:04:05") + ":"}, v...)
+	log.Println(v...)
+	that.logger.Println(v...)
+}
+
+func (that *Store) Init() {
+	_ = os.Mkdir(that.Dir, os.ModePerm)
+	that.data = data{
+		DNS: domianDNS{},
+		Domains: domianData{
+			China: map[string]int{},
+			GFW:   map[string]int{},
+		},
+		Update: []domainUpdate{},
+	}
+	file, _ := os.OpenFile(path.Join(that.Dir, "app.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	that.logger = log.New(file, "[Flamego] ", 0)
+	that.initDNS()
+	that.initUpdate()
+	that.initDomains()
 }
