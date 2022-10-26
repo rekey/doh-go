@@ -64,7 +64,14 @@ func Request(uri string) (*grequests.Response, error) {
 	u, _ := url.Parse(uri)
 	hostname := u.Hostname()
 	ip := Resolve(hostname)
+	port := u.Port()
+	if port == "" {
+		port = "80"
+		if u.Scheme == "https" {
+			port = "443"
+		}
+	}
 	return grequests.Get(uri, &grequests.RequestOptions{
-		HTTPClient: getHttpClient(hostname, ip, u.Port()),
+		HTTPClient: getHttpClient(hostname, ip, port),
 	})
 }
