@@ -3,6 +3,7 @@ package lib
 import (
 	"encoding/json"
 	"github.com/forease/gotld"
+	"io"
 	"log"
 	"math/rand"
 	"os"
@@ -32,6 +33,7 @@ type data struct {
 type Store struct {
 	data   data
 	Dir    string
+	w      io.Writer
 	logger *log.Logger
 }
 
@@ -108,7 +110,6 @@ func (that *Store) Update() {
 	that.log("update", "start")
 	for _, item := range that.data.Update {
 		resp, err := Request(item.Url)
-		that.log(item.Name, item.Url, "done", "err:", err)
 		str := resp.String()
 		lines := strings.Split(str, "\n")
 		for _, line := range lines {
@@ -119,6 +120,7 @@ func (that *Store) Update() {
 			}
 			that.AddDomain(slice[1], item.Name)
 		}
+		that.log("update", item.Name, item.Url, "done", "err:", err)
 	}
 	that.Save()
 	that.log("update", "done")
@@ -159,11 +161,10 @@ func (that *Store) initDomains() {
 
 func (that *Store) log(v ...any) {
 	v = append([]any{time.Now().Format("2006-01-02 15:04:05") + ":"}, v...)
-	log.Println(v...)
 	that.logger.Println(v...)
 }
 
-func (that *Store) Init() {
+func (that *Store) Init(w io.Writer) {
 	_ = os.Mkdir(that.Dir, os.ModePerm)
 	that.data = data{
 		DNS: domianDNS{},
@@ -173,8 +174,7 @@ func (that *Store) Init() {
 		},
 		Update: []domainUpdate{},
 	}
-	file, _ := os.OpenFile(path.Join(that.Dir, "app.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	that.logger = log.New(file, "[Flamego] ", 0)
+	that.logger = log.New(w, "[Flamego] ", 0)
 	that.initDNS()
 	that.initUpdate()
 	that.initDomains()

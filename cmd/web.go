@@ -6,6 +6,7 @@ import (
 	"github.com/flamego/flamego"
 	"github.com/levigross/grequests"
 	"github.com/miekg/dns"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -28,7 +29,7 @@ func parseDomain(dnsQuery string) string {
 	return domain
 }
 
-func createLogWriter() *os.File {
+func createLogWriter() io.Writer {
 	cwd, _ := os.Getwd()
 	storeDir := path.Join(cwd, "store")
 	file, _ := os.OpenFile(path.Join(storeDir, "app.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -42,9 +43,9 @@ func createApp() *flamego.Flame {
 }
 
 func main() {
-	store.Init()
+	store.Init(createLogWriter())
+	store.Update()
 	go func() {
-		store.Update()
 		for {
 			time.Sleep(time.Hour * 12)
 			store.Update()
