@@ -2,7 +2,7 @@ package app
 
 import (
 	"doh-go/lib"
-	"encoding/base64"
+	"encoding/json"
 	"github.com/flamego/flamego"
 	"github.com/levigross/grequests"
 	"github.com/miekg/dns"
@@ -21,13 +21,7 @@ var store = lib.Store{
 	Dir: StoreDir,
 }
 
-func parseDomain(dnsQuery string) string {
-	msg := dns.Msg{}
-	pack, _ := base64.RawURLEncoding.DecodeString(dnsQuery)
-	_ = msg.Unpack(pack)
-	domain := msg.Question[0].Name
-	return domain
-}
+var file = createLogWriter()
 
 func createLogWriter() io.Writer {
 	cwd, _ := os.Getwd()
@@ -38,12 +32,23 @@ func createLogWriter() io.Writer {
 
 func createApp() *flamego.Flame {
 	flamego.SetEnv(flamego.EnvTypeProd)
-	file := createLogWriter()
-	return flamego.NewWithLogger(file)
+	app := flamego.NewWithLogger(file)
+	app.Use(func(c flamego.Context, logger *log.Logger) {
+		now := time.Now().UnixNano()
+		c.Next()
+		logger.Printf("%s: %s %s %d %s",
+			time.Now().Format("2006-01-02 15:04:05"),
+			c.Request().Method,
+			c.Request().URL,
+			c.ResponseWriter().Status(),
+			strconv.FormatInt((time.Now().UnixNano()-now)/1e6, 10)+"ms",
+		)
+	})
+	return app
 }
 
 func Get() *flamego.Flame {
-	store.Init(createLogWriter())
+	store.Init(file)
 	store.Update()
 	go func() {
 		for {
@@ -52,9 +57,16 @@ func Get() *flamego.Flame {
 		}
 	}()
 	app := createApp()
+	app.Get("/test", func(c flamego.Context) string {
+		host := c.Query("domain", "")
+		base := c.Query("dns", "")
+		result := lib.Test(host, base)
+		buf, _ := json.Marshal(result)
+		return string(buf)
+	})
 	app.Get("/dns-query", func(c flamego.Context, logger *log.Logger) {
 		dnsQuery := c.Query("dns", "")
-		domain := parseDomain(dnsQuery)
+		domain := lib.ParseDomain(dnsQuery)
 		arr := dns.SplitDomainName(domain)
 		host := store.GetDNS(strings.Join(arr, "."))
 		url := "https://" + host + c.Request().URL.String()

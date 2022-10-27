@@ -2,8 +2,9 @@ package lib
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/base64"
 	"github.com/levigross/grequests"
+	"github.com/miekg/dns"
 	"net"
 	"net/http"
 	"net/url"
@@ -16,22 +17,62 @@ type DNSAnswer struct {
 	Type int    `json:"type"`
 }
 
-func Resolve(host string) string {
-	uri := "https://223.5.5.5/resolve?name=" + host
-	resp, _ := grequests.Get(uri, &grequests.RequestOptions{})
+func ParseDNSMsg(dnsQuery string) dns.Msg {
+	msg := dns.Msg{}
+	pack, _ := base64.RawURLEncoding.DecodeString(dnsQuery)
+	_ = msg.Unpack(pack)
+	return msg
+}
+
+func ParseDomain(dnsQuery string) string {
+	msg := ParseDNSMsg(dnsQuery)
+	domain := msg.Question[0].Name
+	return domain
+}
+
+func Resolve(host string, base string) (string, error) {
+	msg := dns.Msg{}
+	msg.SetQuestion(host+".", 1)
+	buf, _ := msg.Pack()
+	dnsQuery := base64.RawURLEncoding.EncodeToString(buf)
+	uri := "https://" + base + "/dns-query?dns=" + dnsQuery
+	resp, err := grequests.Get(uri, &grequests.RequestOptions{})
 	defer func() {
 		_ = resp.Close()
 	}()
-	result := struct {
-		Answer []DNSAnswer
-	}{}
-	_ = json.Unmarshal(resp.Bytes(), &result)
-	for _, item := range result.Answer {
-		if item.Type == 1 {
-			return item.Data
+	if err != nil {
+		return "", err
+	}
+	respMsg := dns.Msg{}
+	_ = respMsg.Unpack(resp.Bytes())
+	for _, item := range respMsg.Answer {
+		if item.Header().Rrtype == 1 {
+			return dns.Field(item, 1), nil
 		}
 	}
-	return ""
+	return "", nil
+}
+
+type TestResult struct {
+	Success bool   `json:"success"`
+	Time    int64  `json:"time"`
+	IP      string `json:"ip"`
+}
+
+func Test(host string, base string) TestResult {
+	result := TestResult{
+		Success: false,
+		Time:    0,
+		IP:      "",
+	}
+	if host != "" && base != "" {
+		now := time.Now().UnixNano()
+		ip, err := Resolve(host, base)
+		result.IP = ip
+		result.Success = err == nil
+		result.Time = (time.Now().UnixNano() - now) / 1e6
+	}
+	return result
 }
 
 func getHttpClient(host string, ip string, port string) *http.Client {
@@ -63,7 +104,7 @@ func getHttpClient(host string, ip string, port string) *http.Client {
 func Request(uri string) (*grequests.Response, error) {
 	u, _ := url.Parse(uri)
 	hostname := u.Hostname()
-	ip := Resolve(hostname)
+	ip, _ := Resolve(hostname, "225.5.5.5")
 	port := u.Port()
 	if port == "" {
 		port = "80"
