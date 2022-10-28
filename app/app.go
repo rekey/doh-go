@@ -4,14 +4,11 @@ import (
 	"doh-go/lib"
 	"encoding/json"
 	"github.com/flamego/flamego"
-	"github.com/levigross/grequests"
-	"github.com/miekg/dns"
 	"io"
 	"log"
 	"os"
 	"path"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -66,21 +63,9 @@ func Get() *flamego.Flame {
 	})
 	app.Get("/dns-query", func(c flamego.Context, logger *log.Logger) {
 		dnsQuery := c.Query("dns", "")
-		domain := lib.ParseDomain(dnsQuery)
-		arr := dns.SplitDomainName(domain)
-		cate, host := store.GetDNS(strings.Join(arr, "."))
-		url := "https://" + host + c.Request().URL.String()
-		now := time.Now().UnixNano()
-		resp, _ := grequests.Get(url, &grequests.RequestOptions{})
+		resp, _ := store.Resolve(dnsQuery)
 		defer func() {
 			_ = resp.Close()
-			logger.Printf("%s: Query %s %s %s %s",
-				time.Now().Format("2006-01-02 15:04:05"),
-				domain,
-				cate,
-				host,
-				strconv.FormatInt((time.Now().UnixNano()-now)/1e6, 10)+"ms",
-			)
 		}()
 		w := c.ResponseWriter()
 		_, _ = w.Write(resp.Bytes())

@@ -3,11 +3,14 @@ package lib
 import (
 	"encoding/json"
 	"github.com/forease/gotld"
+	"github.com/levigross/grequests"
+	"github.com/miekg/dns"
 	"io"
 	"log"
 	"math/rand"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -162,6 +165,18 @@ func (that *Store) initDomains() {
 func (that *Store) log(v ...any) {
 	v = append([]any{time.Now().Format("2006-01-02 15:04:05") + ":"}, v...)
 	that.logger.Println(v...)
+}
+
+func (that *Store) Resolve(query string) (*grequests.Response, error) {
+	domain := ParseDomain(query)
+	arr := dns.SplitDomainName(domain)
+	cate, host := that.GetDNS(strings.Join(arr, "."))
+	url := "https://" + host + "/dns-query?dns=" + query
+	now := time.Now().UnixNano()
+	resp, err := grequests.Get(url, &grequests.RequestOptions{})
+	ms := (time.Now().UnixNano() - now) / 1e6
+	that.log(domain, cate, host, strconv.FormatInt(ms, 10)+"ms")
+	return resp, err
 }
 
 func (that *Store) Init(w io.Writer) {

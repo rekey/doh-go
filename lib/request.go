@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"github.com/levigross/grequests"
 	"github.com/miekg/dns"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -34,8 +35,8 @@ func Resolve(host string, base string) (string, error) {
 	msg := dns.Msg{}
 	msg.SetQuestion(host+".", 1)
 	buf, _ := msg.Pack()
-	dnsQuery := base64.RawURLEncoding.EncodeToString(buf)
-	uri := "https://" + base + "/dns-query?dns=" + dnsQuery
+	query := base64.RawURLEncoding.EncodeToString(buf)
+	uri := "https://" + base + "/dns-query?dns=" + query
 	resp, err := grequests.Get(uri, &grequests.RequestOptions{})
 	defer func() {
 		_ = resp.Close()
@@ -104,7 +105,7 @@ func getHttpClient(host string, ip string, port string) *http.Client {
 func Request(uri string) (*grequests.Response, error) {
 	u, _ := url.Parse(uri)
 	hostname := u.Hostname()
-	ip, _ := Resolve(hostname, "225.5.5.5")
+	ip, _ := Resolve(hostname, "223.5.5.5")
 	port := u.Port()
 	if port == "" {
 		port = "80"
@@ -112,6 +113,7 @@ func Request(uri string) (*grequests.Response, error) {
 			port = "443"
 		}
 	}
+	log.Println(hostname, ip, port)
 	return grequests.Get(uri, &grequests.RequestOptions{
 		HTTPClient: getHttpClient(hostname, ip, port),
 	})
