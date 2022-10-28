@@ -175,7 +175,7 @@ func (that *Store) Resolve(query string) (*grequests.Response, error) {
 	now := time.Now().UnixNano()
 	resp, err := grequests.Get(url, &grequests.RequestOptions{})
 	ms := (time.Now().UnixNano() - now) / 1e6
-	that.log(domain, cate, host, strconv.FormatInt(ms, 10)+"ms")
+	that.log("query", domain, cate, host, strconv.FormatInt(ms, 10)+"ms")
 	return resp, err
 }
 
