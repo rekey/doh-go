@@ -7,6 +7,5 @@ ADD ./tls /app/
 ENV ssl=dns.local
 
 VOLUME /app/store
-EXPOSE 54413
 
 CMD ["./tls"]
