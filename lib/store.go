@@ -64,36 +64,36 @@ func (that *Store) AddDomain(key string, cate string) {
 	domains[domain] = 1
 }
 
-func (that *Store) GetDNSList(key string) []string {
+func (that *Store) GetDNSList(key string) (string, []string) {
 	_, key, _ = gotld.GetTld(key)
 	slice := strings.Split(key, ".")
 	if slice[len(slice)-1] == "cn" {
-		return that.data.DNS.China
+		return "china", that.data.DNS.China
 	}
 	if key == "cn" {
-		return that.data.DNS.China
+		return "china", that.data.DNS.China
 	}
 	if key == "top" {
-		return that.data.DNS.Global
+		return "global", that.data.DNS.Global
 	}
 	// 优先检测gfw，后续如果gfw和china表冲突，优先匹配gfw
 	domains := that.data.Domains.GFW
 	if domains[key] == 1 {
-		return that.data.DNS.Global
+		return "global", that.data.DNS.Global
 	}
 	domains = that.data.Domains.China
 	if domains[key] == 1 {
-		return that.data.DNS.China
+		return "china", that.data.DNS.China
 	}
-	return that.data.DNS.Global
+	return "global", that.data.DNS.Global
 }
 
-func (that *Store) GetDNS(key string) string {
+func (that *Store) GetDNS(key string) (string, string) {
 	_, key, _ = gotld.GetTld(key)
-	list := that.GetDNSList(key)
+	cate, list := that.GetDNSList(key)
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	random := r.Intn(len(list))
-	return list[random]
+	return cate, list[random]
 }
 
 func (that *Store) SaveDomains() {
