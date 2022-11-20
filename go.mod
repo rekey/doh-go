@@ -3,16 +3,19 @@ module doh-go
 go 1.18
 
 require (
+	github.com/flamego/flamego v1.7.0
+	github.com/forease/gotld v0.0.0-20220117081630-c190e9a9a647
+	github.com/kabukky/httpscerts v0.0.0-20150320125433-617593d7dcb3
+	github.com/levigross/grequests v0.0.0-20190908174114-253788527a1a
+	github.com/miekg/dns v1.1.50
+)
+
+require (
 	github.com/alecthomas/participle/v2 v2.0.0-beta.5 // indirect
 	github.com/fatih/color v1.13.0 // indirect
-	github.com/flamego/flamego v1.7.0 // indirect
-	github.com/forease/gotld v0.0.0-20220117081630-c190e9a9a647 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
-	github.com/kabukky/httpscerts v0.0.0-20150320125433-617593d7dcb3 // indirect
-	github.com/levigross/grequests v0.0.0-20190908174114-253788527a1a // indirect
 	github.com/mattn/go-colorable v0.1.9 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/miekg/dns v1.1.50 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect

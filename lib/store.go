@@ -2,9 +2,6 @@ package lib
 
 import (
 	"encoding/json"
-	"github.com/forease/gotld"
-	"github.com/levigross/grequests"
-	"github.com/miekg/dns"
 	"io"
 	"log"
 	"math/rand"
@@ -13,6 +10,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/forease/gotld"
+	"github.com/levigross/grequests"
+	"github.com/miekg/dns"
 )
 
 type domianData struct {
@@ -126,7 +127,24 @@ func (that *Store) Update() {
 		that.log("update", item.Name, item.Url, "done", "err:", err)
 	}
 	that.Save()
+	that.updateCustomList("china")
+	that.updateCustomList("gfw")
 	that.log("update", "done")
+}
+
+func (that *Store) updateCustomList(name string) {
+	file := path.Join(that.Dir, name+".conf")
+	_, err := os.Stat(file)
+	if err != nil && os.IsNotExist(err) {
+		return
+	}
+	buf, _ := os.ReadFile(file)
+	lines := strings.Split(string(buf), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		log.Println("custom", name, line)
+		that.AddDomain(line, name)
+	}
 }
 
 func (that *Store) initDNS() {
