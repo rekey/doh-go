@@ -61,14 +61,17 @@ func (that *Store) AddDomain(key string, cate string) {
 		return
 	}
 	_, domain, _ := gotld.GetTld(key)
-	if domain == "" {
-		domains[key] = 1
-		return
-	}
+	domains[key] = 1
 	domains[domain] = 1
 }
 
 func (that *Store) GetDNSList(key string) (string, []string) {
+	if that.data.Domains.China[key] == 1 {
+		return "china", that.data.DNS.China
+	}
+	if that.data.Domains.GFW[key] == 1 {
+		return "global", that.data.DNS.Global
+	}
 	_, key, _ = gotld.GetTld(key)
 	slice := strings.Split(key, ".")
 	if slice[len(slice)-1] == "cn" {
@@ -126,9 +129,9 @@ func (that *Store) Update() {
 		}
 		that.log("update", item.Name, item.Url, "done", "err:", err)
 	}
-	that.Save()
 	that.updateCustomList("china")
 	that.updateCustomList("gfw")
+	that.Save()
 	that.log("update", "done")
 }
 
