@@ -3,11 +3,12 @@ package main
 import (
 	"doh-go/app"
 	"flag"
-	"github.com/kabukky/httpscerts"
 	"log"
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/kabukky/httpscerts"
 )
 
 func main() {
@@ -21,7 +22,6 @@ func main() {
 	keyPath := path.Join(app.StoreDir, "key.pem")
 	// Check if the cert files are available.
 	err := httpscerts.Check(certPath, keyPath)
-	log.Println(err)
 	// If they are not available, generate new ones.
 	if err != nil {
 		err = httpscerts.Generate(certPath, keyPath, ssl)
@@ -30,7 +30,6 @@ func main() {
 		}
 	}
 	server := app.Get()
-	log.Println(server)
 	http.Handle("/", server)
 	err = http.ListenAndServeTLS(":443", certPath, keyPath, nil)
 	log.Println(err)

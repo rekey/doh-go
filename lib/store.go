@@ -66,33 +66,29 @@ func (that *Store) AddDomain(key string, cate string) {
 }
 
 func (that *Store) GetDNSList(key string) (string, []string) {
-	if that.data.Domains.China[key] == 1 {
-		return "china", that.data.DNS.China
+	GFWDomains := that.data.Domains.GFW
+	GFWDNS := that.data.DNS.Global
+	CNDomains := that.data.Domains.China
+	CNDNS := that.data.DNS.China
+	// 优先检测gfw，后续如果gfw和china表冲突，优先匹配gfw
+	if GFWDomains[key] == 1 {
+		return "global", GFWDNS
 	}
-	if that.data.Domains.GFW[key] == 1 {
-		return "global", that.data.DNS.Global
+	if CNDomains[key] == 1 {
+		return "china", CNDNS
 	}
 	_, key, _ = gotld.GetTld(key)
 	slice := strings.Split(key, ".")
+	if key == "top" {
+		return "global", GFWDNS
+	}
 	if slice[len(slice)-1] == "cn" {
-		return "china", that.data.DNS.China
+		return "china", CNDNS
 	}
 	if key == "cn" {
-		return "china", that.data.DNS.China
+		return "china", CNDNS
 	}
-	if key == "top" {
-		return "global", that.data.DNS.Global
-	}
-	// 优先检测gfw，后续如果gfw和china表冲突，优先匹配gfw
-	domains := that.data.Domains.GFW
-	if domains[key] == 1 {
-		return "global", that.data.DNS.Global
-	}
-	domains = that.data.Domains.China
-	if domains[key] == 1 {
-		return "china", that.data.DNS.China
-	}
-	return "global", that.data.DNS.Global
+	return "china", CNDNS
 }
 
 func (that *Store) GetDNS(key string) (string, string) {
