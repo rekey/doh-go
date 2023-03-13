@@ -3,13 +3,14 @@ package app
 import (
 	"doh-go/lib"
 	"encoding/json"
-	"github.com/flamego/flamego"
 	"io"
 	"log"
 	"os"
 	"path"
 	"strconv"
 	"time"
+
+	"github.com/flamego/flamego"
 )
 
 var cwd, _ = os.Getwd()
@@ -69,6 +70,10 @@ func Get() *flamego.Flame {
 		}()
 		w := c.ResponseWriter()
 		_, _ = w.Write(resp.Bytes())
+	})
+	app.Get("/query", func(c flamego.Context, logger *log.Logger) string {
+		domain := c.Query("domain", "")
+		return store.Check(domain)
 	})
 	return app
 }

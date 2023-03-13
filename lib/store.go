@@ -64,27 +64,27 @@ func (that *Store) AddDomain(key string, cate string) {
 	domains[domain] = 1
 }
 
-func (that *Store) GetDNSList(key string) (string, []string) {
+func (that *Store) GetDNSList(domain string) (string, []string) {
 	GFWDomains := that.data.Domains.GFW
 	GFWDNS := that.data.DNS.Global
 	CNDomains := that.data.Domains.China
 	CNDNS := that.data.DNS.China
-	// 优先检测gfw，后续如果gfw和china表冲突，优先匹配gfw
-	if GFWDomains[key] == 1 {
+	// 优先检测gfw
+	if GFWDomains[domain] == 1 {
 		return "global", GFWDNS
 	}
-	if CNDomains[key] == 1 {
+	if CNDomains[domain] == 1 {
 		return "china", CNDNS
 	}
-	_, key, _ = gotld.GetTld(key)
-	slice := strings.Split(key, ".")
-	if key == "top" {
+	_, ext, _ := gotld.GetTld(domain)
+	slice := strings.Split(ext, ".")
+	if ext == "top" {
 		return "global", GFWDNS
+	}
+	if ext == "cn" {
+		return "china", CNDNS
 	}
 	if slice[len(slice)-1] == "cn" {
-		return "china", CNDNS
-	}
-	if key == "cn" {
 		return "china", CNDNS
 	}
 	return "china", CNDNS
@@ -193,6 +193,12 @@ func (that *Store) Resolve(query string) (*grequests.Response, error) {
 	ms := (time.Now().UnixNano() - now) / 1e6
 	that.log("query", domain, cate, host, strconv.FormatInt(ms, 10)+"ms")
 	return resp, err
+}
+
+func (that *Store) Check(domain string) string {
+	arr := dns.SplitDomainName(domain)
+	cate, host := that.GetDNS(strings.Join(arr, "."))
+	return cate + "|" + host
 }
 
 func (that *Store) Init(w io.Writer) {
