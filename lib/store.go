@@ -37,7 +37,6 @@ type data struct {
 type Store struct {
 	data   data
 	Dir    string
-	w      io.Writer
 	logger *log.Logger
 }
 
@@ -151,7 +150,7 @@ func (that *Store) initDNS() {
 	_, err := os.Stat(file)
 	if err != nil && os.IsNotExist(err) {
 		resp, _ := Request("https://cdn.jsdelivr.net/gh/rekey/doh-go@main/store/dns.json")
-		err = os.WriteFile(file, resp.Bytes(), os.ModePerm)
+		_ = os.WriteFile(file, resp.Bytes(), os.ModePerm)
 	}
 	buf, _ := os.ReadFile(file)
 	_ = json.Unmarshal(buf, &that.data.DNS)
@@ -162,7 +161,7 @@ func (that *Store) initUpdate() {
 	_, err := os.Stat(file)
 	if err != nil && os.IsNotExist(err) {
 		resp, _ := Request("https://cdn.jsdelivr.net/gh/rekey/doh-go@main/store/update.json")
-		err = os.WriteFile(file, resp.Bytes(), os.ModePerm)
+		_ = os.WriteFile(file, resp.Bytes(), os.ModePerm)
 	}
 	buf, _ := os.ReadFile(file)
 	_ = json.Unmarshal(buf, &that.data.Update)
@@ -173,7 +172,7 @@ func (that *Store) initDomains() {
 	_, err := os.Stat(file)
 	if err != nil && os.IsNotExist(err) {
 		resp, _ := Request("https://cdn.jsdelivr.net/gh/rekey/doh-go@main/store/domains.json")
-		err = os.WriteFile(file, resp.Bytes(), os.ModePerm)
+		_ = os.WriteFile(file, resp.Bytes(), os.ModePerm)
 	}
 	buf, _ := os.ReadFile(file)
 	_ = json.Unmarshal(buf, &that.data.Domains)
