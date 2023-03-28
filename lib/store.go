@@ -69,6 +69,7 @@ func (that *Store) GetDNSList(domain string) (string, []string) {
 	GFWDNS := that.data.DNS.Global
 	CNDomains := that.data.Domains.China
 	CNDNS := that.data.DNS.China
+	log.Println(GFWDomains[domain])
 	// 优先检测gfw
 	if GFWDomains[domain] == 1 {
 		return "global", GFWDNS
@@ -76,7 +77,11 @@ func (that *Store) GetDNSList(domain string) (string, []string) {
 	if CNDomains[domain] == 1 {
 		return "china", CNDNS
 	}
-	_, ext, _ := gotld.GetTld(domain)
+	_, ext, err := gotld.GetTld(domain)
+	if err != nil {
+		that.log(domain, err)
+		return "china", CNDNS
+	}
 	slice := strings.Split(ext, ".")
 	if ext == "top" {
 		return "global", GFWDNS
@@ -112,6 +117,10 @@ func (that *Store) Update() {
 	that.log("update", "start")
 	for _, item := range that.data.Update {
 		resp, err := Request(item.Url)
+		if err != nil {
+			that.log("update", item.Name, item.Url, "done", "err:", err)
+			continue
+		}
 		str := resp.String()
 		lines := strings.Split(str, "\n")
 		for _, line := range lines {
@@ -140,7 +149,7 @@ func (that *Store) updateCustomList(name string) {
 	lines := strings.Split(string(buf), "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		log.Println("custom", name, line)
+		that.log("custom", name, line)
 		that.AddDomain(line, name)
 	}
 }

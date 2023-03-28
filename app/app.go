@@ -65,6 +65,7 @@ func Get() *flamego.Flame {
 	app.Get("/dns-query", func(c flamego.Context, logger *log.Logger) {
 		dnsQuery := c.Query("dns", "")
 		resp, _ := store.Resolve(dnsQuery)
+		logger.Println(resp)
 		defer func() {
 			_ = resp.Close()
 		}()
