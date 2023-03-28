@@ -79,7 +79,7 @@ func (that *Store) GetDNSList(domain string) (string, []string) {
 	}
 	_, ext, err := gotld.GetTld(domain)
 	if err != nil {
-		that.log(domain, err)
+		that.log("err", domain, err)
 		return "china", CNDNS
 	}
 	slice := strings.Split(ext, ".")
