@@ -69,7 +69,7 @@ func (that *Store) GetDNSList(domain string) (string, []string) {
 	GFWDNS := that.data.DNS.Global
 	CNDomains := that.data.Domains.China
 	CNDNS := that.data.DNS.China
-	log.Println(GFWDomains[domain])
+	that.log("GFWDomains", domain, GFWDomains[domain])
 	// 优先检测gfw
 	if GFWDomains[domain] == 1 {
 		return "global", GFWDNS
