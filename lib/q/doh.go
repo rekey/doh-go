@@ -1,11 +1,7 @@
-package lib
+package q
 
 import (
-	"context"
 	"encoding/base64"
-	"net"
-	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/levigross/grequests"
@@ -37,7 +33,10 @@ func Resolve(host string, base string) (string, error) {
 	buf, _ := msg.Pack()
 	query := base64.RawURLEncoding.EncodeToString(buf)
 	uri := "https://" + base + "/dns-query?dns=" + query
-	resp, err := grequests.Get(uri, &grequests.RequestOptions{})
+	resp, err := grequests.Get(uri, &grequests.RequestOptions{
+		RequestTimeout: 30 * time.Second,
+		DialKeepAlive:  30 * time.Second,
+	})
 	defer func() {
 		_ = resp.Close()
 	}()
@@ -52,6 +51,14 @@ func Resolve(host string, base string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func ResolveOrigin(query string, base string) (*grequests.Response, error) {
+	url := "https://" + base + "/dns-query?dns=" + query
+	return grequests.Get(url, &grequests.RequestOptions{
+		RequestTimeout: 30 * time.Second,
+		DialKeepAlive:  60 * time.Second,
+	})
 }
 
 type TestResult struct {
@@ -74,48 +81,4 @@ func Test(host string, base string) TestResult {
 		result.Time = (time.Now().UnixNano() - now) / 1e6
 	}
 	return result
-}
-
-func getHttpClient(host string, ip string, port string) *http.Client {
-	dialer := &net.Dialer{
-		Timeout:   30 * time.Second,
-		KeepAlive: 30 * time.Second,
-	}
-	var transport http.RoundTripper = &http.Transport{
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-		DialContext: func(
-			ctx context.Context,
-			network,
-			addr string,
-		) (net.Conn, error) {
-			matchAddr := host + ":" + port
-			if addr == matchAddr {
-				addr = ip + ":" + port
-			}
-			return dialer.DialContext(ctx, network, addr)
-		},
-	}
-	return &http.Client{
-		Transport: transport,
-	}
-}
-
-func Request(uri string) (*grequests.Response, error) {
-	u, _ := url.Parse(uri)
-	hostname := u.Hostname()
-	ip, _ := Resolve(hostname, "223.5.5.5")
-	port := u.Port()
-	if port == "" {
-		port = "80"
-		if u.Scheme == "https" {
-			port = "443"
-		}
-	}
-	return grequests.Get(uri, &grequests.RequestOptions{
-		HTTPClient: getHttpClient(hostname, ip, port),
-	})
 }

@@ -2,6 +2,9 @@ package app
 
 import (
 	"doh-go/lib"
+	"doh-go/lib/db"
+	"doh-go/lib/dns"
+	"doh-go/lib/q"
 	"encoding/json"
 	"io"
 	"log"
@@ -15,8 +18,12 @@ import (
 
 var cwd, _ = os.Getwd()
 var StoreDir = path.Join(cwd, "store")
-var store = lib.Store{
+var dnsdb = &db.DB{
 	Dir: StoreDir,
+	DNS: "223.5.5.5",
+}
+var ddns = &dns.DNS{
+	DB: dnsdb,
 }
 
 var file = createLogWriter()
@@ -46,14 +53,9 @@ func createApp() *flamego.Flame {
 }
 
 func Get() *flamego.Flame {
-	store.Init(file)
-	store.Update()
-	go func() {
-		for {
-			time.Sleep(time.Hour * 12)
-			store.Update()
-		}
-	}()
+
+	ddns.Init()
+
 	app := createApp()
 	app.Get("/test", func(c flamego.Context) string {
 		host := c.Query("domain", "")
@@ -62,18 +64,31 @@ func Get() *flamego.Flame {
 		buf, _ := json.Marshal(result)
 		return string(buf)
 	})
+
 	app.Get("/dns-query", func(c flamego.Context, logger *log.Logger) {
+		now := time.Now().UnixNano()
 		dnsQuery := c.Query("dns", "")
-		resp, _ := store.Resolve(dnsQuery)
+		host := q.ParseDomain(dnsQuery)
+		cate, ip := ddns.GetDNS(host)
+		ms := (time.Now().UnixNano() - now) / 1e6
+		resp, _ := q.ResolveOrigin(dnsQuery, ip)
 		defer func() {
 			_ = resp.Close()
 		}()
 		w := c.ResponseWriter()
 		_, _ = w.Write(resp.Bytes())
+		logger.Println(host, cate, ip, strconv.FormatInt(ms, 10)+"ms")
 	})
+
 	app.Get("/query", func(c flamego.Context, logger *log.Logger) string {
-		domain := c.Query("domain", "")
-		return store.Check(domain)
+		now := time.Now().UnixNano()
+		host := c.Query("domain", "")
+		cate, ip := ddns.GetDNS(host)
+		resp, _ := q.Resolve(host, ip)
+		ms := (time.Now().UnixNano() - now) / 1e6
+		logger.Println(host, cate, ip, strconv.FormatInt(ms, 10)+"ms")
+		return resp
 	})
+
 	return app
 }

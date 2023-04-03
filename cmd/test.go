@@ -1,20 +1,25 @@
 package main
 
 import (
-	"doh-go/lib"
+	"doh-go/lib/db"
+	"doh-go/lib/dns"
 	"log"
+	"os"
+	"path"
 )
 
 func main() {
-	//	service.Store.AddDomain("bilibili.com", "china")
-	//	service.Store.AddDomain("douyincdn.com", "china")
-	//	service.Store.AddDomain("youtube.com", "gfw")
-	//	service.Store.AddDomain("google.com", "gfw")
-	//	service.Store.Save()
-	//	service.Store.Update()
-	//	resp := lib.Resolve("cdn.jsdelivr.net")
-	//	result, _ := lib.Request("https://cdn.jsdelivr.net/gh/rekey/doh-go@main/store/dns.json")
-	//	log.Println(result.String())
-	log.Println(lib.Resolve("www.baidu.com", "223.5.5.5"))
-	log.Println(lib.ParseDomain("AAABAAABAAAAAAABA3d3dwplLXFpbmdxaW5nA2NvbQAAAQABAAApCAAAAIAAAAA"))
+	cwd, _ := os.Getwd()
+	StoreDir := path.Join(cwd, "store")
+	dnsdb := &db.DB{
+		Dir: StoreDir,
+		DNS: "223.5.5.5",
+	}
+	ddns := &dns.DNS{
+		DB: dnsdb,
+	}
+	ddns.Init()
+
+	log.Println(ddns.GetDNS("www.qq.com"))
+	log.Println(ddns.GetDNS("youtube.com"))
 }

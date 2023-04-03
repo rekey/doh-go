@@ -20,14 +20,17 @@ type domianData struct {
 	China map[string]int `json:"china"`
 	GFW   map[string]int `json:"gfw"`
 }
+
 type domainUpdate struct {
 	Name string `json:"name"`
 	Url  string `json:"url"`
 }
+
 type domianDNS struct {
 	Global []string `json:"global"`
 	China  []string `json:"china"`
 }
+
 type data struct {
 	DNS     domianDNS      `json:"dns"`
 	Update  []domainUpdate `json:"update"`
@@ -105,8 +108,14 @@ func (that *Store) GetDNS(key string) (string, string) {
 
 func (that *Store) SaveDomains() {
 	file := path.Join(that.Dir, "domains.json")
+	china := path.Join(that.Dir, "china.json")
+	gfw := path.Join(that.Dir, "gfw.json")
 	buf, _ := json.Marshal(that.data.Domains)
+	chinaBuf, _ := json.Marshal(that.data.Domains.China)
+	gfwBuf, _ := json.Marshal(that.data.Domains.GFW)
 	_ = os.WriteFile(file, buf, os.ModePerm)
+	_ = os.WriteFile(china, chinaBuf, os.ModePerm)
+	_ = os.WriteFile(gfw, gfwBuf, os.ModePerm)
 }
 
 func (that *Store) Save() {

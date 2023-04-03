@@ -1,10 +1,4 @@
-[
-  {
-    "name": "gfw",
-    "url": "https://cdn.jsdelivr.net/gh/rekey/doh@gh-pages/gfw.conf"
-  },
-  {
-    "name": "china",
-    "url": "https://cdn.jsdelivr.net/gh/rekey/doh@gh-pages/china.conf"
-  }
-]
+{
+  "gfw": "https://cdn.jsdelivr.net/gh/rekey/doh@gh-pages/gfw.conf",
+  "china": "https://cdn.jsdelivr.net/gh/rekey/doh@gh-pages/china.conf"
+}
