@@ -109,6 +109,11 @@ func (that *DNS) GetDNSType(domain string) string {
 }
 
 func (that *DNS) GetDNS(domain string) (string, string) {
+	length := len(domain)
+	lastS := domain[length-1]
+	if string(lastS) == "." {
+		domain = string(domain[0 : length-1])
+	}
 	t := that.GetDNSType(domain)
 	list := strings.Split(that.Data["dns"][t], ",")
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))

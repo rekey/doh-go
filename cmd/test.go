@@ -20,6 +20,6 @@ func main() {
 	}
 	ddns.Init()
 
-	log.Println(ddns.GetDNS("www.qq.com"))
+	log.Println(ddns.GetDNS("stun.chat.bilibili.com."))
 	log.Println(ddns.GetDNS("youtube.com"))
 }
