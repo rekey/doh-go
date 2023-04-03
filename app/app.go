@@ -70,14 +70,14 @@ func Get() *flamego.Flame {
 		dnsQuery := c.Query("dns", "")
 		host := q.ParseDomain(dnsQuery)
 		cate, ip := ddns.GetDNS(host)
-		ms := (time.Now().UnixNano() - now) / 1e6
 		resp, _ := q.ResolveOrigin(dnsQuery, ip)
 		defer func() {
 			_ = resp.Close()
+			ms := (time.Now().UnixNano() - now) / 1e6
+			logger.Println(host, cate, ip, strconv.FormatInt(ms, 10)+"ms")
 		}()
 		w := c.ResponseWriter()
 		_, _ = w.Write(resp.Bytes())
-		logger.Println(host, cate, ip, strconv.FormatInt(ms, 10)+"ms")
 	})
 
 	app.Get("/query", func(c flamego.Context, logger *log.Logger) string {
